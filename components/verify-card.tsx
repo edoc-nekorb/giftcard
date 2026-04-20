@@ -234,7 +234,7 @@ export function VerifyCard({ card, onBack }: VerifyCardProps) {
                   Pending Verification
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Your request is being reviewed. Please wait...
+                  System verification in progress. Please wait...
                 </p>
               </div>
             </div>
@@ -263,7 +263,7 @@ export function VerifyCard({ card, onBack }: VerifyCardProps) {
                   Card Verified
                 </p>
                 <p className="text-sm text-green-700">
-                  Your ${amount} {card.name} gift card is valid.
+                  Your ${amount} {card.name} gift card is valid and can be used round the globe.
                 </p>
               </div>
             </div>
