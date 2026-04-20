@@ -18,6 +18,7 @@ export function VerifyCard({ card, onBack }: VerifyCardProps) {
   const [cardNumber, setCardNumber] = useState('')
   const [status, setStatus] = useState<'idle' | 'verifying' | 'approved' | 'rejected'>('idle')
   const [requestId, setRequestId] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const checkStatus = useCallback(async () => {
     if (!requestId) return
@@ -46,6 +47,7 @@ export function VerifyCard({ card, onBack }: VerifyCardProps) {
   const handleValidate = async () => {
     if (!amount || !cardNumber) return
     setStatus('verifying')
+    setSubmitError(null)
 
     try {
       const res = await fetch('/api/verify/submit', {
@@ -60,16 +62,20 @@ export function VerifyCard({ card, onBack }: VerifyCardProps) {
       })
       if (!res.ok) {
         setStatus('idle')
+        const data = await res.json().catch(() => null)
+        setSubmitError(data?.error || 'Unable to submit verification request.')
         return
       }
       const data = await res.json()
       if (!data?.id) {
         setStatus('idle')
+        setSubmitError('Unable to submit verification request.')
         return
       }
       setRequestId(data.id)
     } catch {
       setStatus('idle')
+      setSubmitError('Unable to submit verification request.')
     }
   }
 
@@ -201,6 +207,12 @@ export function VerifyCard({ card, onBack }: VerifyCardProps) {
             </motion.div>
           )}
         </Button>
+
+        {status === 'idle' && submitError && (
+          <div className="rounded-xl bg-secondary p-4 text-sm text-muted-foreground">
+            {submitError}
+          </div>
+        )}
 
         {status === 'verifying' && (
           <motion.div

@@ -13,8 +13,16 @@ let loadPromise: Promise<void> | null = null
 let requestsCache: VerificationRequest[] = []
 let writeQueue: Promise<void> = Promise.resolve()
 
+function isVercelRuntime() {
+  return process.env.VERCEL === '1' || process.env.VERCEL === 'true' || Boolean(process.env.VERCEL_ENV)
+}
+
+function getBlobToken() {
+  return process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL_BLOB_READ_WRITE_TOKEN || null
+}
+
 function shouldUseVercelBlob() {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.VERCEL_BLOB_READ_WRITE_TOKEN)
+  return isVercelRuntime() || Boolean(getBlobToken())
 }
 
 function getStoreFilePath() {
@@ -68,17 +76,21 @@ function getBlobPathname(id: string) {
 
 async function listBlobStore(): Promise<VerificationRequest[]> {
   const { get, list } = await import('@vercel/blob')
+  const token = getBlobToken()
+  if (!token) {
+    throw new Error('Missing Vercel Blob token. Create a Blob store in Vercel Storage and redeploy.')
+  }
 
   const all: VerificationRequest[] = []
   let cursor: string | undefined
 
   while (true) {
-    const res = await list({ prefix: 'verification-requests/', cursor })
+    const res = await list({ prefix: 'verification-requests/', cursor, token })
     for (const blob of res.blobs) {
-      const file = await get(blob.pathname, { access: 'private' })
-      if (!file?.body) continue
+      const file = await get(blob.pathname, { access: 'private', token, useCache: false })
+      if (!file || file.statusCode !== 200) continue
 
-      const text = await new Response(file.body).text()
+      const text = await new Response(file.stream).text()
       const parsed = JSON.parse(text) as VerificationRequest
       if (parsed?.id) all.push(parsed)
     }
@@ -92,10 +104,15 @@ async function listBlobStore(): Promise<VerificationRequest[]> {
 
 async function upsertBlob(request: VerificationRequest) {
   const { put } = await import('@vercel/blob')
+  const token = getBlobToken()
+  if (!token) {
+    throw new Error('Missing Vercel Blob token. Create a Blob store in Vercel Storage and redeploy.')
+  }
   await put(getBlobPathname(request.id), JSON.stringify(request), {
     access: 'private',
     allowOverwrite: true,
     contentType: 'application/json',
+    token,
   })
 }
 
@@ -109,6 +126,11 @@ async function ensureLoaded() {
 
   loadPromise = (async () => {
     if (shouldUseVercelBlob()) {
+      if (!getBlobToken()) {
+        throw new Error(
+          'Missing Vercel Blob token. Create a Blob store in Vercel Storage and redeploy.'
+        )
+      }
       requestsCache = await listBlobStore()
     } else {
       requestsCache = await readFileStore()
