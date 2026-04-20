@@ -20,14 +20,27 @@ export default function AdminPage() {
   const [requests, setRequests] = useState<VerificationRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchRequests = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/requests')
+      if (!res.ok) {
+        if (res.status === 401) {
+          setError('Unauthorized. Please refresh and enter admin credentials.')
+        } else {
+          setError('Unable to load requests.')
+        }
+        setRequests([])
+        return
+      }
+
       const data = await res.json()
       setRequests(data.requests)
+      setError(null)
     } catch {
-      // Handle error silently
+      setError('Unable to load requests.')
+      setRequests([])
     } finally {
       setLoading(false)
     }
@@ -42,7 +55,17 @@ export default function AdminPage() {
   const handleApprove = async (id: string) => {
     setProcessing(id)
     try {
-      await fetch(`/api/admin/approve/${id}`, { method: 'POST' })
+      const res = await fetch(`/api/admin/approve/${id}`, { method: 'POST' })
+      if (!res.ok) {
+        if (res.status === 401) {
+          setError('Unauthorized. Please refresh and enter admin credentials.')
+        } else {
+          setError('Unable to approve request.')
+        }
+        return
+      }
+
+      setError(null)
       await fetchRequests()
     } finally {
       setProcessing(null)
@@ -52,7 +75,17 @@ export default function AdminPage() {
   const handleReject = async (id: string) => {
     setProcessing(id)
     try {
-      await fetch(`/api/admin/reject/${id}`, { method: 'POST' })
+      const res = await fetch(`/api/admin/reject/${id}`, { method: 'POST' })
+      if (!res.ok) {
+        if (res.status === 401) {
+          setError('Unauthorized. Please refresh and enter admin credentials.')
+        } else {
+          setError('Unable to reject request.')
+        }
+        return
+      }
+
+      setError(null)
       await fetchRequests()
     } finally {
       setProcessing(null)
@@ -103,6 +136,12 @@ export default function AdminPage() {
             Review and approve gift card verification requests
           </p>
         </div>
+
+        {error && (
+          <div className="mb-6 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+            {error}
+          </div>
+        )}
 
         {loading ? (
           <div className="flex h-64 items-center justify-center">

@@ -58,7 +58,15 @@ export function VerifyCard({ card, onBack }: VerifyCardProps) {
           cardNumber,
         }),
       })
+      if (!res.ok) {
+        setStatus('idle')
+        return
+      }
       const data = await res.json()
+      if (!data?.id) {
+        setStatus('idle')
+        return
+      }
       setRequestId(data.id)
     } catch {
       setStatus('idle')
