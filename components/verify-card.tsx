@@ -86,10 +86,17 @@ export function VerifyCard({ card, onBack }: VerifyCardProps) {
     setCardNumber('')
   }
 
+  const maxCardNumberLength = 25
+  const maxCardNumberInputLength =
+    maxCardNumberLength + Math.floor((maxCardNumberLength - 1) / 4)
+
   const formatCardNumber = (value: string) => {
-    const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+    const cleaned = value
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .toUpperCase()
+      .substring(0, maxCardNumberLength)
     const chunks = cleaned.match(/.{1,4}/g)
-    return chunks ? chunks.join(' ').substring(0, 19) : cleaned
+    return chunks ? chunks.join(' ') : cleaned
   }
 
   return (
@@ -157,7 +164,7 @@ export function VerifyCard({ card, onBack }: VerifyCardProps) {
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">
-            Gift Card Number
+            Gift Card Code
           </label>
           <Input
             type="text"
@@ -165,7 +172,7 @@ export function VerifyCard({ card, onBack }: VerifyCardProps) {
             value={cardNumber}
             onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
             className="h-14 rounded-xl border-0 bg-secondary text-lg font-medium tracking-widest text-foreground placeholder:text-muted-foreground placeholder:tracking-normal focus-visible:ring-2 focus-visible:ring-accent"
-            maxLength={19}
+            maxLength={maxCardNumberInputLength}
             disabled={status !== 'idle'}
           />
         </div>

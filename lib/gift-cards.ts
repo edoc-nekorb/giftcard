@@ -1,9 +1,9 @@
 export interface GiftCard {
   id: string
   name: string
-  color: string
+  color?: string
   textColor: string
-  icon: string
+  icon?: string
   logo: string
 }
 
@@ -89,5 +89,19 @@ export const giftCards: GiftCard[] = [
     textColor: '#000000',
     icon: '🎯',
     logo: '/target.png',
+  },
+  {
+    id: 'ebay',
+    name: 'Ebay',
+    textColor: '#000000',
+    icon: '🛒',
+    logo: '/ebay.png',
+  },
+  {
+    id: 'Razer',
+    name: 'Razer',
+    textColor: '#000000',
+    icon: '🎮',
+    logo: '/razer.png',
   },
 ]
